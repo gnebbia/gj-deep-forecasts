@@ -18,7 +18,7 @@ which is freely available at the following link:
 
 It is enough to clone the repository with:
 ```bash 
-$ git clone $url_of_repo 
+$ git clone https://github.com/gnebbia/gj-deep-forecasts
 ```
 
 It is recommended as usual to create a virtual environment and after its activation 
