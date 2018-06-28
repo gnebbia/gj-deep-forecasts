@@ -1,0 +1,16 @@
+# Dev/Deployment
+sphinx
+sphinx_rtd_theme
+nose
+coverage
+pypi-publisher
+
+# Usage
+requests
+nltk
+stop-words
+gensim
+numpy
+pandas
+torch
+torchvision

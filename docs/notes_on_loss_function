@@ -1,0 +1,29 @@
+The loss function is a 3D function, whose domain is given by (sigma, b-a) and
+the codomain is represented by the loss function output.
+Just to recap, this is a description of the function we need:
+- on the x axis we have sigma so the neural network output, this is bound in
+  the interval [0,1] since it is the output of a sigmoid
+- on the y axis we have the distance (b - a), and here we are not using the
+  absolute value so we could also have negative values. Also this value is
+  bound in a limited interval, since this is just a difference between two
+  euclidean distances
+- on the z axis we have the loss function ouput which should be characterized
+  by the following properties:
+    - if sigma is = 1 and b-a is positively high (so the network thinks the prediction of
+      A is better than B and the distance b-a is positively high) this means
+      that actually a is a better prediction then the network loss should be
+      "LOW"
+    - if sigma is = 0 and b-a is negatively high (so the network thinks the
+      preidction of B is better than A and the distance b-a is negatively high)
+      this means that actually b is a better prediction then the network loss
+      should be "LOW" 
+    - if sigma is = 1 and b-a is negatively high (so the network thinks the prediction of
+      A is better than B but the distance b-a is negatively high) this means
+      that actually b is a better prediction then the network loss should be
+      "HIGH"
+    - if sigma is = 0 and b-a is positively high (so the network thinks the
+      preidction of B is better than A but the distance b-a is positevely high)
+      this means that actually b is a better prediction then the network loss
+      should be "HIGH" 
+
+
