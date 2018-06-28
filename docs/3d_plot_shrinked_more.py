@@ -3,8 +3,13 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import random
 
+x_shifting = 8
+output_shrinking = 172 
+z_shifting = 101.769
+y_shifting = 10**5
+
 def fun(x, y):
-  return ((((x-15)*300)**2 - ((y-8)*300)**2 + 2*((x)*300)*((y)*300)**2 )/10**10) + 540 
+  return ((((x-8)*172)**2 - ((y-8)*172)**2 + 2*((x)*172)*((y)*172)**2 + 1)/10**5) + 101.769
 
 def fun_bak(x, y):
   return x**2 - y**2 + 2*x*y**2 + 1 
