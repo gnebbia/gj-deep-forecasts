@@ -17,7 +17,7 @@ class DistanceLoss(torch.nn.Module):
         # Assign variables to x and y just for more readability
         x = tanh_output
         y = e_dist
-        loss_distance = ((((x-8)*500)**2 - ((y-8)*500)**2 + 2*((x)*500)*((y)*500)**2 + 1)/10**5) + 2500
+        loss_distance = ((((x-8)*172)**2 - ((y-8)*172)**2 + 2*((x)*172)*((y)*172)**2 + 1)/10**5) + 101.769
 
         return loss_distance
 
