@@ -22,6 +22,30 @@ for ifp_id in ds["ifp_id"].unique():
         list_per_ifp_id += subset
 
  
-d = pd.DataFrame(data = list_per_ifp_id, columns = ds.columns)
-d.to_csv(args.output, index = False)
+df = pd.DataFrame(data = list_per_ifp_id, columns = ds.columns)
+
+df_even =  df.iloc[::2]
+df_odd = df.iloc[1::2]
+
+
+df_even = df_even.rename(columns={'user_id': 'user_id_1', 'value_a': 'value_a_1', 'value_b': 'value_b_1',
+                               'value_c': 'value_c_1', 'days_from_start': 'days_from_start_1',
+                               'distance': 'distance_1', 'expertise':'expertise_1'})
+
+df_odd = df_odd.rename(columns={'user_id': 'user_id_2', 'value_a': 'value_a_2', 'value_b': 'value_b_2',
+                               'value_c': 'value_c_2', 'days_from_start': 'days_from_start_2',
+                               'distance': 'distance_2', 'expertise':'expertise_2'})
+df_odd = df_odd.drop(['ifp_id','topic_0','topic_1','topic_2','topic_3','topic_4','topic_5','a','b','c'], 1)
+
+
+
+
+df_odd = df_odd.reset_index(drop=True)
+df_even = df_even.reset_index(drop=True)
+
+df_complete = pd.concat([df_even, df_odd], axis=1)
+
+
+
+ds_complete.to_csv(args.output, index = False)
 
