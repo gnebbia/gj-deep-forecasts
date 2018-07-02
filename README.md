@@ -45,7 +45,11 @@ produced in the last step, this step will output us a dataset which can be fed t
 $ python generate_pairs_for_siamese_net.py --input=~/ds.csv --output=~/ds_with_combinations.csv
 ```
 
-At this point the output file can be used to be the input of the siamese neural network, each couple of rows
-in the file compose a combination of forecasts, so the even rows will be fed to a branch of the siamese network
-while the odd rows will be fed to the other branch of the siamese network.
+At this point the output file can be used to be the input of the siamese neural network, each row
+in the file contains information about a combination of forecasts.
+
+At this point In order to start the training of the neural network we can type:
+```bash
+$ python train.py --input=~/ds_with_combinations.csv 
+```
 
