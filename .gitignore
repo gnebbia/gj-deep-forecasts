@@ -12,6 +12,11 @@ results/
 # Cache for dataset
 .dscache
 
+# Datasets
+data/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
 
 # Packages
 *.egg
