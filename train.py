@@ -20,7 +20,13 @@ logger = logging.getLogger('debug')
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input", help="input dataset")
+parser.add_argument("--epochs", help="number of epochs in the training phase", default = 5, type = int)
+parser.add_argument("--siamese_size", help="number of neurons for siamese network", default = 20, type = int)
+parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
+parser.add_argument("--batch_size", help="size of the batch to use in the training phase, it is suggested to set this equal to the number of cores of GPU", default = 64, type = int)
 args = parser.parse_args()
+
+print(args)
 
 
 # Dataset Loading 
@@ -54,19 +60,19 @@ train = dataset.sample(frac=0.95,random_state=200)
 test = dataset.drop(train.index)
 
 
+# Here a custom Data Loader is used
 train = gjnn.dataloader.Dataset(train) 
 test = gjnn.dataloader.Dataset(test)
 
 
-# Some Neural Network Training Related Hyperparameters
-batch_size = 64
-n_iters = 1000
-num_epochs = n_iters / (len(train) / batch_size)
-num_epochs = int(num_epochs)
+# Old Manual Setting of Some Neural Network Training Related Hyperparameters
+#batch_size = 64
+#n_iters = 1000
+#num_epochs = n_iters / (len(train) / batch_size)
+#num_epochs = int(num_epochs)
 
-
-
-
+batch_size = args.batch_size
+num_epochs = args.epochs
 
 
 train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
@@ -77,18 +83,17 @@ test_loader = torch.utils.data.DataLoader(test, batch_size=batch_size, shuffle=F
 logger.debug("Dataset has been properly loaded...")
 
 # Setting other neural network hyperparameters
-hidden_layer_size = 20
-siamese_layer_size = 20
+hidden_layer_size = args.hidden_size
+siamese_layer_size = args.siamese_size
 output_layer_size = 1
 num_features_per_branch = 13
 lr = 0.01
 momentum = 0.9
-num_epoch = 5
 
+#logger.debug("The number of iterations is: " + str(n_iters))
 logger.debug("Neural Network Hyperparameters...")
 logger.debug("The number of epochs is: " + str(num_epochs))
-logger.debug("The number of iterations is: " + str(n_iters))
-logger.debug("The batch size is: " + str(n_iters))
+logger.debug("The batch size is: " + str(batch_size))
 logger.debug("The learning rate is: " + str(lr))
 logger.debug("The number of neurons in each siamese input layer is: " + str(num_features_per_branch))
 logger.debug("The number of neurons for each siamese hidden layer is: " + str(siamese_layer_size))
@@ -114,7 +119,7 @@ iterat = 0
 
 losses = []
 for epoch in range(num_epochs):
-    logger.debug("Epoch " + str(epoch))
+    print("Epoch: " + str(epoch))
     for i, (user_1, user_2, user_1_dist, user_2_dist) in enumerate(train_loader):
         
         # Make each batch a Torch Variable
@@ -136,18 +141,19 @@ for epoch in range(num_epochs):
         losses.append(loss)
         
         
-        print("loss for i {} is equal to: {}".format(i, loss))
+        iterat += 1
+        print("Loss for iteration {} and i {} is equal to: {}".format(iterat, i, loss))
         
         loss.backward()
         
         optimizer.step()
         
-        iterat += 1
-        print(iterat)
+        #print(iterat)
 
 
 
 # Printing the sequence of losses
+print("The sequence of losses is: ")
 for i in losses:
     print(i)
 
