@@ -14,16 +14,18 @@ class DistanceLoss(torch.nn.Module):
         super(DistanceLoss, self).__init__()
 
     def forward(self, dist_a, dist_b, tanh_output):
+        #loss_distance = ( ( ( (x-8)*172)**2 - ( (y-8)*172 )**2 + 2*( (x)*172)*( (y)*172)**2 + 1)/10**5 ) + 101.769
         # Assign variables to x and y just for more readability
         x = tanh_output
 #        print("Size of x (tanh output) is: " + str(x))
 #        print(x.size())
+
         y = dist_b - dist_a
+        # Normalize the difference between distances to be in the range [-1,1]
         y = (2*(y - dist_min)/(dist_max - dist_min)) -1
         y = y.view(-1,1)
-#        print("Size of y dist b - dist a is: " + str(y))
-#        print(y.size())
-        #loss_distance = ( ( ( (x-8)*172)**2 - ( (y-8)*172 )**2 + 2*( (x)*172)*( (y)*172)**2 + 1)/10**5 ) + 101.769
+        print("Size of y dist b - dist a is: " + str(y))
+        print(y.size())
 
         im1 = torch.add(x, -8)
 #        print("Size of im1 x -8 is : " + str(im1))
