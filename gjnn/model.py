@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 # At the moment each Siamese network branch has 3 hidden layers
 
@@ -41,10 +42,15 @@ class SiameseNetwork(nn.Module):
         out = self.fc4(out)
         out = self.relu4(out)
 
+        return out
+
     def forward(self, input1, input2):
         output1 = self.forward_once(input1)
         output2 = self.forward_once(input2)
-        merged_out = output1 + output2
+
+        # Now we can merge the two branches of the siamese
+        # and continue with a series of fully connected layers
+        merged_out = torch.cat((output1, output2), 1)
         
         merged_branches = self.fc5(merged_out)
         merged_branches = self.relu5(merged_branches)
