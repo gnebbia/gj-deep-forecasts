@@ -2,6 +2,11 @@ import urllib.request
 import os
 import errno
 import zipfile
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 url = 'https://dataverse.harvard.edu/api/access/datafiles/2917332,2917333,2917331,2917330,2917334,2917335,2917336,2917337,2917339,2917340,2917341,2917342,2917343,2917344,2917345,2917346,2917347,2917348,2917349,2917338,2917350,2917351,2917352,2917353,2917354'
 

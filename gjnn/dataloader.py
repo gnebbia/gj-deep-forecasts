@@ -2,6 +2,9 @@ import torch
 from torch.utils import data
 import numpy as np
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Dataset(data.Dataset):
   def __init__(self, df):

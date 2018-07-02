@@ -18,6 +18,9 @@ data/
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
 
+# Logs
+*.log
+
 # Packages
 *.egg
 *.egg-info
