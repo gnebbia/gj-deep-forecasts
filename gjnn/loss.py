@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 class DistanceLoss(torch.nn.Module):
@@ -10,13 +11,10 @@ class DistanceLoss(torch.nn.Module):
     def __init__(self):
         super(DistanceLoss, self).__init__()
 
-    def forward(self, output1, output2, tanh_output):
-	# Computation of the euclidean distance between the forecasts
-        e_dist = F.pairwise_distance(output1, output2) 
-	
+    def forward(self, dist_a, dist_b, tanh_output):
         # Assign variables to x and y just for more readability
         x = tanh_output
-        y = e_dist
+        y = dist_b - dist_a
         loss_distance = ((((x-8)*172)**2 - ((y-8)*172)**2 + 2*((x)*172)*((y)*172)**2 + 1)/10**5) + 101.769
 
         return loss_distance
