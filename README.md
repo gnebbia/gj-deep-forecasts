@@ -50,6 +50,18 @@ in the file contains information about a combination of forecasts.
 
 At this point In order to start the training of the neural network we can type:
 ```bash
-$ python train.py --input=~/ds_with_combinations.csv 
+$ python train.py --siamese_size=25  --hidden_size=20 --epochs=2 --batch_size=64 --input=data/ds_wit_combinations.csv
 ```
+
+The script train.py is parameterized, as can be seen in the above example, anyway it can also be started with default 
+hyperparameters with:
+
+```bash
+$ python train.py --input=data/ds_wit_combinations.csv
+```
+It is adviceable to first run the script on a small dataset to inspect the output, and modify it accordingly to
+preference.
+
+For example the loss function values could be saved in a separate file or plotted on screen with a plot,
+by default all the loss function values will be printed on screen.
 
