@@ -1,5 +1,6 @@
 import torch
 from torch.utils import data
+import numpy as np
 import pandas as pd
 
 class Dataset(data.Dataset):
@@ -17,9 +18,10 @@ class Dataset(data.Dataset):
   def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        user_1_data = self.user_1.iloc[index].tolist()
-        user_2_data = self.user_2.iloc[index].tolist()
+        user_1_data = np.array(self.user_1.iloc[index].tolist(), dtype=np.float32)
+        user_2_data = np.array(self.user_2.iloc[index].tolist(), dtype=np.float32)
+        user_1_dist = np.array(self.user_1["distance_1"].tolist(), dtype=np.float32)
+        user_2_dist = np.array(self.user_2["distance_2"].tolist(), dtype=np.float32)
 
         # Load data and get label
-
-        return user_1_data, user_2_data
+        return user_1_data, user_2_data, user_1_dist, user_2_dist
