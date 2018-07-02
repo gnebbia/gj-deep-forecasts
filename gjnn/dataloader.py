@@ -20,8 +20,8 @@ class Dataset(data.Dataset):
         # Select sample
         user_1_data = np.array(self.user_1.iloc[index].tolist(), dtype=np.float32)
         user_2_data = np.array(self.user_2.iloc[index].tolist(), dtype=np.float32)
-        user_1_dist = np.array(self.user_1["distance_1"].tolist(), dtype=np.float32)
-        user_2_dist = np.array(self.user_2["distance_2"].tolist(), dtype=np.float32)
+        user_1_dist = np.array(self.user_1.iloc[index]["distance_1"].tolist(), dtype=np.float32)
+        user_2_dist = np.array(self.user_2.iloc[index]["distance_2"].tolist(), dtype=np.float32)
 
         # Load data and get label
         return user_1_data, user_2_data, user_1_dist, user_2_dist
