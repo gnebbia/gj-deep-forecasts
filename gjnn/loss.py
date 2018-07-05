@@ -31,67 +31,32 @@ class DistanceLoss(torch.nn.Module):
         # To not have all the operations on a single line
         # I preferred to keep track of InterMediate steps
         # through variables called 'im'
-        im1 = torch.add(x, -8)
-        im2 = torch.mul(im1, 172)
-        im3 = torch.pow(im2, 2)
+        x_squared = torch.pow(x, 2)
+        y_squared = torch.pow(y, 2)
+        xy = x * y
+        x2y = torch.mul(xy, 2)
 
-        im4 = torch.add(y, -8)
-        im5 = torch.mul(im4, 172)
-        im6 = torch.pow(im5, 2)
+        im1 = torch.add(x_squared, -y_squared)
+        im2 = torch.add(im1, -x2y)
+
+        im3 = torch.mul(im2, 50)
         
-        im7 = torch.mul(x, 2)
-        im8 = torch.mul(im7, 172)
-        im9 = im8 * y
+        loss = torch.add(im3, 100)
 
-        im10 = torch.pow(im9, 2)
+        loss = loss.mean()
 
-        im11 = torch.add(im3, -im6)
-
-        im12 = torch.add(im11, im10)
-
-        im13 = torch.add(im12, 1)
-
-        im14 = torch.div(im13, 10**5)
-
-        loss_distance = torch.add(im14, 101.769)
-
-        loss_distance = loss_distance.mean()
-
-        # DEBUGGING PRINT
+        # Logging Loss Function computation
         logger.info("Size of x (tanh output) is: " + str(x))
         logger.info(x.size())
         logger.info("Size of y dist b - dist a is: " + str(y))
         logger.info(y.size())
-        logger.info("Size of im1 x -8 is : " + str(im1))
+        logger.info("Size of im1: x_squared - y_squared is : " + str(im1))
         logger.info(im1.size())
-        logger.info("Size of im2 im1 * 172 is : " + str(im2))
+        logger.info("Size of im2: im1 - 2xy is : " + str(im2))
         logger.info(im2.size())
-        logger.info("Size of im3 im2**2 is : " + str(im3))
+        logger.info("Size of im3: im2*50 is : " + str(im3))
         logger.info(im3.size())
-        logger.info("Size of im4 y -8 is : " + str(im4))
-        logger.info(im4.size())
-        logger.info("Size of im5 im4*172 is : " + str(im5))
-        logger.info(im5.size())
-        logger.info("Size of im6 im5**2 is : " + str(len(im6)))
-        logger.info(im6.size())
-        logger.info("Size of im7 x*2 is : " + str(im7))
-        logger.info(im7.size())
-        logger.info("Size of im8 im7*172 is : " + str(im8))
-        logger.info(im8.size())
-        logger.info("Size of im9 im8*y is : " + str(im9))
-        logger.info(im9.size())
-        logger.info("Size of im10 im9**2 is : " + str(im10))
-        logger.info(im10.size())
-        logger.info("Size of im11 im3 - im6 is : " + str(im11))
-        logger.info(im11.size())
-        logger.info("Size of im12 im11 + im10 is : " + str(im12))
-        logger.info(im12.size())
-        logger.info("Size of im13 im12 + 1 is : " + str(im13))
-        logger.info(im13.size())
-        logger.info("Size of im14 im13 / 10**5 is : " + str(im14))
-        logger.info(im14.size())
-        logger.info("Size of final loss distance is : " + str(loss_distance))
-        logger.info(loss_distance.size())
+        logger.info("Size of loss function is : " + str(loss))
+        logger.info(loss.size())
 
-        return loss_distance
-
+        return loss
