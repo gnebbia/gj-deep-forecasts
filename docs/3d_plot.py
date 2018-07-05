@@ -8,11 +8,11 @@ output_shrinking = 172
 z_shifting = 101.769
 y_shifting = 10**5
 
-def fun(x, y):
-  return ((((x-8)*172)**2 - ((y-8)*172)**2 + 2*((x)*172)*((y)*172)**2 + 1)/10**5) + 101.769
+#def fun(x, y):
+#  return ((((x-8)*172)**2 - ((y-8)*172)**2 + 2*((x)*172)*((y)*172)**2 + 1)/10**5) + 101.769
 
-def fun_bak(x, y):
-  return x**2 - y**2 + 2*x*y**2 + 1 
+def fun(x, y):
+  return x**2 - y**2 - 2*x*y**2 + 1 
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
