@@ -1,3 +1,8 @@
+sphinx
+sphinx_rtd_theme
+nose
+coverage
+pypi-publisher
 requests
 nltk
 stop-words
