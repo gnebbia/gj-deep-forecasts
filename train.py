@@ -19,12 +19,13 @@ logging.config.fileConfig('conf/logging.conf')
 logger = logging.getLogger('debug')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--input", help="input dataset")
+parser.add_argument("--input", help="input dataset", default = "ds_short.csv", type = str)
 parser.add_argument("--epochs", help="number of epochs in the training phase", default = 5, type = int)
 parser.add_argument("--siamese_size", help="number of neurons for siamese network", default = 20, type = int)
 parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
-parser.add_argument("--batch_size", help="size of the batch to use in the training phase, it is suggested to set this equal to the number of cores of GPU", default = 64, type = int)
-args = parser.parse_args()
+parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default = 64, type = int)
+#args = parser.parse_args()
+args = parser.parse_args(["--siamese_size=3","--hidden_size=5","--epochs=2","--batch_size=32","--input=ds_short.csv"])
 
 print(args)
 
@@ -53,16 +54,16 @@ logger.debug(len(dataset))
 
 dataset = dataset.apply(pd.to_numeric)
 
-
-
-# The current split is 95% of data is used for training and 5% for validation of the model
-train = dataset.sample(frac=0.95,random_state=200)
+# The current split is 85% of data is used for training and 15% for validation of the model
+train = dataset.sample(frac=0.85,random_state=200)
 test = dataset.drop(train.index)
 
 
 # Here a custom Data Loader is used
 train = gjnn.dataloader.Dataset(train) 
 test = gjnn.dataloader.Dataset(test)
+
+
 
 
 # Old Manual Setting of Some Neural Network Training Related Hyperparameters
@@ -78,8 +79,7 @@ num_epochs = args.epochs
 train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
 test_loader = torch.utils.data.DataLoader(test, batch_size=batch_size, shuffle=False)
 
-
-
+## How do you know?
 logger.debug("Dataset has been properly loaded...")
 
 # Setting other neural network hyperparameters
@@ -87,7 +87,7 @@ hidden_layer_size = args.hidden_size
 siamese_layer_size = args.siamese_size
 output_layer_size = 1
 num_features_per_branch = 13
-lr = 0.01
+lr = 0.001
 momentum = 0.9
 
 #logger.debug("The number of iterations is: " + str(n_iters))
@@ -110,7 +110,7 @@ logger.debug("Distance Loss Correctly Initialized...")
 
 # At the moment we stick to a classic SGD algorithm, maybe we can change it to Adam
 #optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 logger.debug("Optimizer Instantiated...")
 
 
@@ -143,10 +143,12 @@ for epoch in range(num_epochs):
         
         iterat += 1
         print("Loss for iteration {} and i {} is equal to: {}".format(iterat, i, loss))
+        print(model.fc2.weight[0][0])
         
         loss.backward()
         
         optimizer.step()
+        print(model.fc2.weight[0][0])
         
         #print(iterat)
 

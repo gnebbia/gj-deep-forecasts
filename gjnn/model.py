@@ -18,7 +18,6 @@ class SiameseNetwork(nn.Module):
         self.fc4 = nn.Linear(siamese_layer_size, siamese_layer_size)
         self.relu4 = nn.ReLU()
 
-
         self.fc5 = nn.Linear(siamese_layer_size * 2, hidden_layer_size)
         self.relu5 = nn.ReLU()
 
