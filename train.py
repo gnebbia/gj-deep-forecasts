@@ -25,7 +25,7 @@ parser.add_argument("--siamese_size", help="number of neurons for siamese networ
 parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
 parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default = 64, type = int)
 #args = parser.parse_args()
-args = parser.parse_args(["--siamese_size=3","--hidden_size=5","--epochs=2","--batch_size=32","--input=ds_short.csv"])
+args = parser.parse_args(["--siamese_size=10","--hidden_size=10","--epochs=2","--batch_size=32","--input=ds_short.csv"])
 
 print(args)
 
@@ -49,8 +49,6 @@ user_1 = dataset.iloc[:, features_user_1]
 user_2 = dataset.iloc[:, features_user_2]
 
 logger.debug(len(dataset))
-
-
 
 dataset = dataset.apply(pd.to_numeric)
 
@@ -113,42 +111,30 @@ logger.debug("Distance Loss Correctly Initialized...")
 optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 logger.debug("Optimizer Instantiated...")
 
-
-iterat = 0
-
-
 losses = []
 for epoch in range(num_epochs):
     print("Epoch: " + str(epoch))
     for i, (user_1, user_2, user_1_dist, user_2_dist) in enumerate(train_loader):
-        
-        # Make each batch a Torch Variable
-        features_u1 = Variable(user_1)
-        features_u2 = Variable(user_2)
-        dist_u1 = Variable(user_1_dist)
-        dist_u2 = Variable(user_2_dist)
-        
-        optimizer.zero_grad()
+
+        #optimizer.zero_grad()
         
         # Here we have to feed data to the neural network, we insert data we want to
         # give as input to the siamese layers
-        outputs = model(features_u1, features_u2)
-        
+        outputs = model(user_1, user_2)
+        print(outputs)
 
         loss = criterion(user_1_dist, user_2_dist, outputs)
+        print(loss)
         
         # Keep track of loss values
         losses.append(loss)
-        
-        
-        iterat += 1
-        print("Loss for iteration {} and i {} is equal to: {}".format(iterat, i, loss))
-        print(model.fc2.weight[0][0])
-        
+
+        print("Loss after batch {} for epoch {} is: {}".format(i+1, epoch+1, loss))
+        print(model.output_layer[0].weight)
         loss.backward()
-        
         optimizer.step()
-        print(model.fc2.weight[0][0])
+        print(model.fc2[0].weight[0])
+        input('ok')
         
         #print(iterat)
 

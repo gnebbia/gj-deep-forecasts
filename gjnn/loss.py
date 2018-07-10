@@ -41,9 +41,9 @@ class DistanceLoss(torch.nn.Module):
 
         im3 = torch.mul(im2, 50)
         
-        loss = torch.add(im3, 100)
+        the_loss = torch.add(im3, 100)
 
-        loss = loss.mean()
+        the_loss = torch.mean(the_loss)
 
         # Logging Loss Function computation
         logger.info("Size of x (tanh output) is: " + str(x))
@@ -56,7 +56,7 @@ class DistanceLoss(torch.nn.Module):
         logger.info(im2.size())
         logger.info("Size of im3: im2*50 is : " + str(im3))
         logger.info(im3.size())
-        logger.info("Size of loss function is : " + str(loss))
-        logger.info(loss.size())
+        logger.info("Size of loss function is : " + str(the_loss))
+        logger.info(the_loss.size())
 
-        return loss
+        return the_loss
