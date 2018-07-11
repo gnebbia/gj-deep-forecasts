@@ -3,7 +3,7 @@ import os
 import errno
 import zipfile
 import logging
-
+from sklearn import preprocessing
 
 logger = logging.getLogger(__name__)
 
