@@ -11,6 +11,7 @@ import gjnn.dataloader
 import argparse
 import logging
 import logging.config
+import timeit
 from sklearn import preprocessing
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -66,14 +67,17 @@ parser.add_argument("--siamese_size", help="number of neurons for siamese networ
 parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
 parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default = 64, type = int)
 #args = parser.parse_args()
-args = parser.parse_args(["--siamese_size=13","--hidden_size=32","--epochs=100","--batch_size=128","--input=ds_short.csv"])
+args = parser.parse_args(["--siamese_size=13","--hidden_size=32","--epochs=100","--batch_size=128","--input=ds_with_combinations_yr1.csv"])
 
 print(args)
 
 
 # Dataset Loading 
 logger.debug("Reading Dataset...")
+print("Reading Dataset...")
+x = timeit.time.time()
 dataset = pd.read_csv(args.input, sep=None, engine='python',  dtype={'user_id_1': "category", "user_id_2":"category"})
+print("Done! It took {:.3f} seconds".format(timeit.time.time() - x))
 dataset.drop(["ifp_id"], axis = 1, inplace = True)
 
 logger.info(dataset.head())

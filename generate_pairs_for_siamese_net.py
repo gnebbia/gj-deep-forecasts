@@ -37,15 +37,9 @@ df_odd = df_odd.rename(columns={'user_id': 'user_id_2', 'value_a': 'value_a_2', 
                                'distance': 'distance_2', 'expertise':'expertise_2'})
 df_odd = df_odd.drop(['ifp_id','topic_0','topic_1','topic_2','topic_3','topic_4','topic_5','a','b','c'], 1)
 
-
-
-
 df_odd = df_odd.reset_index(drop=True)
 df_even = df_even.reset_index(drop=True)
 
 df_complete = pd.concat([df_even, df_odd], axis=1)
-
-
-
-ds_complete.to_csv(args.output, index = False)
+df_complete.to_csv(args.output, index=False)
 

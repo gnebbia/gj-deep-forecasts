@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import argparse
 import gjnn.dsutils as utils
+from tqdm import *
 from scipy.spatial import distance
 
 
@@ -78,7 +79,8 @@ c = c[c.n_opts != 5]
 counter_opts = 0
 out_index = 0
 
-for index, row in c.iterrows():
+print("Number of rows: {}".format(c.shape[0]))
+for index, row in tqdm(c.iterrows()):
     current_nopts = row["n_opts"]
     ds.loc[out_index]["ifp_id"] = row["ifp_id"]
     ds.loc[out_index]["topic_0"] = row["topic_0"]
@@ -133,6 +135,6 @@ def compute_euclidean_distance(row):
 
 ds['distance'] = ds.apply(compute_euclidean_distance, axis=1)
 
-
+print('writing dataset to disk...')
 ds.to_csv(args.outputf, index = False)
 
