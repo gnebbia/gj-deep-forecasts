@@ -64,7 +64,7 @@ def get_corpus(doc_set):
     # loop through document list
 
     for i in doc_set:
-    	    
+        i = i.decode('utf-8', 'ignore').encode("utf-8")
         # clean and tokenize document string
         raw = i.lower()
         tokens = tokenizer.tokenize(raw)
@@ -79,7 +79,7 @@ def get_corpus(doc_set):
         texts.append(stemmed_tokens)
     
         # turn our tokenized documents into a id <-> term dictionary
-        dictionary = corpora.Dictionary(texts)
+    dictionary = corpora.Dictionary(texts)
     	 
     	# convert tokenized documents into a document-term matrix
     corpus = [dictionary.doc2bow(text) for text in texts]
@@ -98,42 +98,40 @@ def save_topics_to_file(filename, num_words = 20):
     with open(filename, 'a') as out:
     	for i in ldamodel.print_topics(num_words=20):
     		out.write(str(i) + '\n')
-    
+
+
+#if __name__ == "__main__":
+filename_in         = "data/ifps.csv"
+filename_out_topics = "data/topics_structure.txt"
+
+questions = pd.read_csv(open(filename_in, 'rU'), sep=None, engine='python',encoding='utf-8')
+
+doc_set = get_questions_text(questions)
+doc_set = preprocess_text(doc_set)
+
+corpus, dictionary	= get_corpus(doc_set)
+num_topics = 7
+passes = 20
+
+ldamodel = generate_lda_model(num_topics, corpus, passes, dictionary)
+save_topics_to_file(filename_out_topics)
+
+for i in range(num_topics):
+    questions['topic_' + str(i)] = 0
+
+# Let's see how the model assigns topic on a new question string
+doc_lda = []
+
+for i in range(len(doc_set)):
+    #print("The question is {}".format(doc_set[i]))
+    doc_lda.append(ldamodel[corpus[i]])
+    #print("The result is {}".format(doc_lda))
 
 
 
-if __name__ == "__main__":
-    filename_in         = "data/ifps.csv"
-    filename_out_topics = "data/topics_structure.txt"
+for index, row in questions.iterrows():
+    for i in doc_lda[index]:
+            questions.loc[index,'topic_' + str(i[0])] = i[1]
 
-    questions = pd.read_csv(filename_in, sep=None, engine='python')
 
-    doc_set = get_questions_text(questions)
-    doc_set = preprocess_text(doc_set)
-
-    corpus, dictionary	= get_corpus(doc_set)
-    num_topics = 7
-    passes = 20
-
-    ldamodel = generate_lda_model(num_topics, corpus, passes, dictionary)
-    save_topics_to_file(filename_out_topics)
-
-    for i in range(num_topics):
-    	questions['topic_' + str(i)] = 0
-    
-    # Let's see how the model assigns topic on a new question string
-    doc_lda = []
-    
-    for i in range(len(doc_set)):
-        #print("The question is {}".format(doc_set[i]))
-        doc_lda.append(ldamodel[corpus[i]])
-        #print("The result is {}".format(doc_lda))
-    
-    
-    
-    for index, row in questions.iterrows():
-        for i in doc_lda[index]:
-                questions.loc[index,'topic_' + str(i[0])] = i[1]
-    
-    
-    questions.to_csv('data/questions_w_topics.csv', index=False)
+questions.to_csv('data/questions_w_topics.csv', index=False)
