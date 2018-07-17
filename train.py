@@ -67,10 +67,14 @@ parser.add_argument("--siamese_size", help="number of neurons for siamese networ
 parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
 parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default = 64, type = int)
 #args = parser.parse_args()
-args = parser.parse_args(["--siamese_size=13","--hidden_size=32","--epochs=100","--batch_size=128","--input=ds_with_combinations_yr1.csv"])
+args = parser.parse_args(["--siamese_size=13","--hidden_size=32","--epochs=100","--batch_size=128","--input=ds_sample_500k.csv"])
 
 print(args)
 
+# shuf -n 1000000 ds_with_combinations_yr1.csv > ds_sample_1M.csv
+# cat ds_sample_1M.csv >> header.csv
+# mv header.csv ds_sample_1M.csv
+# sed -i 's/\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,//g' ds_sample_1M.csv
 
 # Dataset Loading 
 logger.debug("Reading Dataset...")

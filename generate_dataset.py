@@ -118,7 +118,7 @@ ds["days_from_start"] = (ds["fcast_date_a"] - ds["date_start"]).dt.days
 ds.loc[ds.days_from_start < 0,'days_from_start'] = 0
 ds.drop(['answer_option_a', 'answer_option_b', 'answer_option_c', 'n_opts', 'fcast_date_a', 'fcast_date_b', 'fcast_date_c', 'date_start'], axis=1, inplace = True)
 cols = ds.columns.tolist()
-cols = cols[:-2] + [cols[-1]] + [cols[-2]]
+cols =g cols[:-2] + [cols[-1]] + [cols[-2]]
 
 
 ds = ds[cols]
