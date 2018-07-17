@@ -21,7 +21,7 @@ for ifp_id in ds["ifp_id"].unique():
     for subset in itertools.combinations(cifp.values.tolist(), L):
         list_per_ifp_id += subset
 
- 
+
 df = pd.DataFrame(data = list_per_ifp_id, columns = ds.columns)
 
 df_even =  df.iloc[::2]
@@ -47,5 +47,5 @@ df_complete = pd.concat([df_even, df_odd], axis=1)
 
 
 
-ds_complete.to_csv(args.output, index = False)
+df_complete.to_csv(args.output, index = False)
 
