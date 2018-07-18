@@ -65,17 +65,17 @@ class SiameseNetwork(nn.Module):
         self.fc3.apply(init_weights)
 
         self.output_layer = nn.Sequential(
-            nn.Linear(hidden_layer_size, output_size),
-            nn.BatchNorm1d(output_size),
-            nn.Tanh()
+            nn.Linear(hidden_layer_size, 1),
+            #nn.BatchNorm1d(output_size),
+            #nn.Tanh()
         )
         self.output_layer.apply(init_output_weights)
 
 
     def forward_once(self, x):
         x = self.siamese_input(x)
-        #x = self.siamese_fc1(x)
-        #x = self.siamese_fc2(x)
+        x = self.siamese_fc1(x)
+        x = self.siamese_fc2(x)
         #x = self.siamese_fc3(x)
         return x
 
@@ -89,7 +89,7 @@ class SiameseNetwork(nn.Module):
 
         merged_out = self.fc1(merged_out)
         merged_out = self.fc2(merged_out)
-        #merged_out = self.fc3(merged_out)
+        merged_out = self.fc3(merged_out)
         merged_out = self.output_layer(merged_out)
 
         return merged_out

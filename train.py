@@ -70,7 +70,7 @@ parser.add_argument("--siamese_size", help="number of neurons for siamese networ
 parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
 parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default = 64, type = int)
 #args = parser.parse_args()
-args = parser.parse_args(["--siamese_size=32","--hidden_size=64","--epochs=100","--batch_size=256","--input=ds_sample_500k.csv"])
+args = parser.parse_args(["--siamese_size=32","--hidden_size=64","--epochs=100","--batch_size=256","--input=ds_sample_5M.csv"])
 
 print(args)
 
@@ -145,13 +145,13 @@ model = model.to(device)
 logger.debug("Model correctly initialized...")
 
 # Initialization of the Loss Function
-criterion = gjnn.loss.DistanceLoss()
+#criterion = gjnn.loss.DistanceLoss()
+criterion = nn.modules.loss.BCEWithLogitsLoss()
 logger.debug("Distance Loss Correctly Initialized...")
 
 # At the moment we stick to a classic SGD algorithm, maybe we can change it to Adam
 #optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=True)
-optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 logger.debug("Optimizer Instantiated...")
 
 losses = []
@@ -170,8 +170,9 @@ for epoch in range(num_epochs):
         # Here we have to feed data to the neural network, we insert data we want to
         # give as input to the siamese layers
         outputs = model(user_1, user_2)
-
-        loss = criterion(user_1_dist, user_2_dist, outputs)
+        targets = (user_2_dist - user_1_dist > 0).type_as(outputs)
+        loss = criterion(outputs.squeeze(), targets)
+        #loss = criterion(user_1_dist, user_2_dist, outputs)
         
         # Keep track of loss values
         #losses.append(loss)
