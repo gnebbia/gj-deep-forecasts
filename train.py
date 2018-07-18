@@ -34,7 +34,11 @@ def prepare_data(dataset):
     max_expertise = max(max(dataset["expertise_2"]), max(dataset["expertise_2"]))
 
     ## Normalize columns
+    min_max_scaler = preprocessing.MinMaxScaler()
     for i in dataset.columns:
+        if i.startswith("distance"):
+            # Don't normalize the distance columns!
+            continue
         if i == "user_id_1":
             dataset["user_id_1"] = dataset["user_id_1"].transform(lambda x: (float(x) - min_id) / (max_id - min_id))
         elif i == "user_id_2":
@@ -45,7 +49,6 @@ def prepare_data(dataset):
             dataset["expertise_2"] = dataset["expertise_2"].transform(lambda x: (float(x) - min_expertise) / (max_expertise - min_expertise))
         else:
             x = dataset[i]  # returns a numpy array
-            min_max_scaler = preprocessing.MinMaxScaler()
             x_scaled = min_max_scaler.fit_transform(x)
             dataset[i] = x_scaled
 
@@ -67,7 +70,7 @@ parser.add_argument("--siamese_size", help="number of neurons for siamese networ
 parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
 parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default = 64, type = int)
 #args = parser.parse_args()
-args = parser.parse_args(["--siamese_size=13","--hidden_size=32","--epochs=100","--batch_size=128","--input=ds_sample_500k.csv"])
+args = parser.parse_args(["--siamese_size=32","--hidden_size=64","--epochs=100","--batch_size=256","--input=ds_sample_500k.csv"])
 
 print(args)
 
@@ -76,7 +79,7 @@ print(args)
 # mv header.csv ds_sample_1M.csv
 # sed -i 's/\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,//g' ds_sample_1M.csv
 
-# Dataset Loading 
+# Dataset Loading
 logger.debug("Reading Dataset...")
 print("Reading Dataset...")
 x = timeit.time.time()
@@ -99,7 +102,7 @@ test = dataset.drop(train.index)
 
 
 # Here a custom Data Loader is used
-train = gjnn.dataloader.Dataset(train) 
+train = gjnn.dataloader.Dataset(train)
 test = gjnn.dataloader.Dataset(test)
 
 # Old Manual Setting of Some Neural Network Training Related Hyperparameters
@@ -123,7 +126,7 @@ hidden_layer_size = args.hidden_size
 siamese_layer_size = args.siamese_size
 output_layer_size = 1
 num_features_per_branch = 13
-lr = 0.0005
+lr = 0.01
 momentum = 0.9
 
 #logger.debug("The number of iterations is: " + str(n_iters))
@@ -175,12 +178,12 @@ for epoch in range(num_epochs):
 
         loss.backward()
         if i % 25 == 0:
-            print("Loss after batch {} for epoch {} is: {:.4f}.\n"
+            print("Loss after batch {}/{} for epoch {} is: {:.4f}.\n"
                   "Network mean output: {:.4f}.\n"
                   "Output layer mean grad signal: {:.4f}.\n"
                   "Combine layer mean grad signal: {:.4f}.\n"
                   "Siamese layer mean grad signal: {:.4f}.".format(
-            i + 1, epoch + 1, loss, torch.mean(outputs),
+            i + 1, len(train_loader), epoch + 1, loss, torch.mean(outputs),
             torch.mean(model.output_layer[0].weight.grad),
             torch.mean(model.fc1[0].weight.grad),
             torch.mean(model.siamese_input[0].weight.grad)))

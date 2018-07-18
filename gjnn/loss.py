@@ -25,7 +25,7 @@ class DistanceLoss(torch.nn.Module):
         y = dist_b - dist_a
 
         # Normalize the difference between distances to be in the range [-1,1]
-        #y = (2*(y - dist_min)/(dist_max - dist_min)) -1
+        y = (2*(y - dist_min)/(dist_max - dist_min)) -1
         y = y.view(-1,1)
 
         # To not have all the operations on a single line
