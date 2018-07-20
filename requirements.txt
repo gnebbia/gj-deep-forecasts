@@ -7,3 +7,4 @@ pandas
 torch
 torchvision
 urllib3
+tensorboardX

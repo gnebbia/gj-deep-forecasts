@@ -1,4 +1,4 @@
-import urllib.request
+import urllib3 as urllib
 import os
 import errno
 import zipfile

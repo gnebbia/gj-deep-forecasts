@@ -104,7 +104,7 @@ def save_topics_to_file(filename, num_words = 20):
 filename_in         = "data/ifps.csv"
 filename_out_topics = "data/topics_structure.txt"
 
-questions = pd.read_csv(open(filename_in, 'rU'), sep=None, engine='python',encoding='utf-8')
+questions = pd.read_csv(open(filename_in, 'rU'), sep=None, engine='python')
 
 doc_set = get_questions_text(questions)
 doc_set = preprocess_text(doc_set)

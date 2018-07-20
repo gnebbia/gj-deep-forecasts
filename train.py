@@ -3,16 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import torchvision.datasets as dsets
-from torch.autograd import Variable
 import gjnn.model
 import gjnn.loss
 import gjnn.dataloader
 import argparse
-import logging
 import logging.config
 import timeit
 from sklearn import preprocessing
+from tensorboardX import SummaryWriter
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -58,7 +56,7 @@ def prepare_data(dataset):
     return dataset, user_1, user_2
 
 logging.config.fileConfig('conf/logging.conf')
-
+writer = SummaryWriter("/home/derek/deep-forecasts/logs")
 
 # create logger
 logger = logging.getLogger('debug')
@@ -70,7 +68,7 @@ parser.add_argument("--siamese_size", help="number of neurons for siamese networ
 parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default = 25, type = int)
 parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default = 64, type = int)
 #args = parser.parse_args()
-args = parser.parse_args(["--siamese_size=32","--hidden_size=64","--epochs=100","--batch_size=256","--input=ds_sample_5M.csv"])
+args = parser.parse_args(["--siamese_size=32","--hidden_size=64","--epochs=100","--batch_size=256","--input=ds_sample_500k.csv"])
 
 print(args)
 
@@ -116,7 +114,7 @@ num_epochs = args.epochs
 
 
 train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test, batch_size=batch_size, shuffle=False)
+test_loader = torch.utils.data.DataLoader(test, batch_size=2*batch_size, shuffle=False)
 
 ## How do you know?
 logger.debug("Dataset has been properly loaded...")
@@ -141,6 +139,7 @@ logger.debug("The number of neurons in the output layer is: " + str(output_layer
 
 # Check dimensions of features
 model = gjnn.model.SiameseNetwork(num_features_per_branch, siamese_layer_size, hidden_layer_size, output_layer_size)
+
 model = model.to(device)
 logger.debug("Model correctly initialized...")
 
@@ -154,10 +153,11 @@ logger.debug("Distance Loss Correctly Initialized...")
 optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=True)
 logger.debug("Optimizer Instantiated...")
 
-losses = []
 model.train()
 for epoch in range(num_epochs):
     print("Epoch: " + str(epoch))
+
+    ## Training loop
     for i, (user_1, user_2, user_1_dist, user_2_dist) in enumerate(train_loader):
 
         user_1 = user_1.to(device)
@@ -170,30 +170,46 @@ for epoch in range(num_epochs):
         # Here we have to feed data to the neural network, we insert data we want to
         # give as input to the siamese layers
         outputs = model(user_1, user_2)
+        comparison = (outputs.squeeze() > 0)
         targets = (user_2_dist - user_1_dist > 0).type_as(outputs)
         loss = criterion(outputs.squeeze(), targets)
-        #loss = criterion(user_1_dist, user_2_dist, outputs)
-        
-        # Keep track of loss values
-        #losses.append(loss)
 
         loss.backward()
-        if i % 25 == 0:
-            print("Loss after batch {}/{} for epoch {} is: {:.4f}.\n"
-                  "Network mean output: {:.4f}.\n"
-                  "Output layer mean grad signal: {:.4f}.\n"
-                  "Combine layer mean grad signal: {:.4f}.\n"
-                  "Siamese layer mean grad signal: {:.4f}.".format(
-            i + 1, len(train_loader), epoch + 1, loss, torch.mean(outputs),
-            torch.mean(model.output_layer[0].weight.grad),
-            torch.mean(model.fc1[0].weight.grad),
-            torch.mean(model.siamese_input[0].weight.grad)))
 
+        if i % 100 == 0:
+            acc = torch.mean((comparison == targets.type_as(comparison)).type_as(torch.FloatTensor()))
+
+            writer.add_scalar('Train/loss', loss, i*(epoch+1))
+            writer.add_scalar('Train/acc', acc, i*(epoch+1))
+            print("Loss after batch {}/{} for epoch {} is: {:.4f}. Acc: {:.4f}\n".format(i + 1, len(train_loader), epoch + 1, loss, acc))
+        #    "Network mean output: {:.4f}.\n"
+        #    "Output layer mean grad signal: {:.4f}.\n"
+        #    "Combine layer mean grad signal: {:.4f}.\n"
+        #    "Siamese layer mean grad signal: {:.4f}.".format(
+        #    i + 1, len(train_loader), epoch + 1, loss, torch.mean(outputs),
+        #    torch.mean(model.output_layer[0].weight.grad),
+        #    torch.mean(model.fc1[0].weight.grad),
+        #    torch.mean(model.siamese_input[0].weight.grad)))
         optimizer.step()
 
+    ## Validation loop
+    print("Running validation...")
+    for i, (user_1, user_2, user_1_dist, user_2_dist) in enumerate(test_loader):
+        user_1 = user_1.to(device)
+        user_2 = user_2.to(device)
+        user_1_dist = user_1_dist.to(device)
+        user_2_dist = user_2_dist.to(device)
 
-# Printing the sequence of losses
-print("The sequence of losses is: ")
-for i in losses:
-    print(i)
+        optimizer.zero_grad()
 
+        outputs = model(user_1, user_2)
+        comparison = (outputs.squeeze() > 0)
+        targets = (user_2_dist - user_1_dist > 0).type_as(outputs)
+        loss = criterion(outputs.squeeze(), targets)
+
+        if i % 100 == 0:
+            acc = torch.mean((comparison == targets.type_as(comparison)).type_as(torch.FloatTensor()))
+            writer.add_scalar('Val/loss', loss, i * (epoch + 1))
+            writer.add_scalar('Val/acc', acc, i * (epoch + 1))
+            print("Loss on validation batch {}/{} for epoch {} is: {:.4f}. Acc: {:.4f}\n".format(i + 1, len(train_loader),
+                                                                                           epoch + 1, loss, acc))
