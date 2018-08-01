@@ -4,4 +4,4 @@ for e in tf.train.summary_iterator("/home/derek/deep-forecasts/logs/events.out.t
     for v in e.summary.value:
         if v.tag == 'loss' or v.tag == 'accuracy':
             print(v.simple_value)
-            raw_input('ok')
+            raw_input('ok') 

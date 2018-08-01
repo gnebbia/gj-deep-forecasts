@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import gjnn.model
 import gjnn.dataloader
+import gjnn.dataset_preprocessing
 import argparse
 import logging.config
 import timeit
@@ -15,50 +16,6 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-
-def prepare_data(dataset):
-    # To modify when dataset column order will change
-    features_user_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15]
-    features_user_2 = [0, 1, 2, 3, 4, 5, 16, 17, 18, 19, 20, 21, 22]
-    topics = [0, 1, 2, 3, 4, 5]
-
-    ## categorical columns
-    dataset["user_id_1"] = dataset["user_id_1"].fillna(0.0).astype(int)
-    dataset["user_id_2"] = dataset["user_id_2"].fillna(0.0).astype(int)
-    dataset["expertise_1"] = dataset["expertise_1"].fillna(0.0).astype(int)
-    dataset["expertise_2"] = dataset["expertise_2"].fillna(0.0).astype(int)
-    min_id = min(min(dataset["user_id_1"]), min(dataset["user_id_2"]))
-    max_id = max(max(dataset["user_id_1"]), max(dataset["user_id_2"]))
-    min_expertise = min(min(dataset["expertise_1"]), min(dataset["expertise_2"]))
-    max_expertise = max(max(dataset["expertise_2"]), max(dataset["expertise_2"]))
-
-    ## Normalize columns
-    min_max_scaler = preprocessing.MinMaxScaler()
-    for i in dataset.columns:
-        if i.startswith("distance"):
-            # Don't normalize the distance columns!
-            continue
-        if i == "user_id_1":
-            dataset["user_id_1"] = dataset["user_id_1"].transform(lambda x: (float(x) - min_id) / (max_id - min_id))
-        elif i == "user_id_2":
-            dataset["user_id_2"] = dataset["user_id_2"].transform(lambda x: (float(x) - min_id) / (max_id - min_id))
-        elif i == "expertise_1":
-            dataset["expertise_1"] = dataset["expertise_1"].transform(
-                lambda x: (float(x) - min_expertise) / (max_expertise - min_expertise))
-        elif i == "expertise_2":
-            dataset["expertise_2"] = dataset["expertise_2"].transform(
-                lambda x: (float(x) - min_expertise) / (max_expertise - min_expertise))
-        else:
-            x = dataset[i]  # returns a numpy array
-            x_scaled = min_max_scaler.fit_transform(x)
-            dataset[i] = x_scaled
-
-    #user_1 = dataset.iloc[:, features_user_1]
-    #user_2 = dataset.iloc[:, features_user_2]
-
-    return dataset
-
 
 logging.config.fileConfig('conf/logging.conf')
 writer = SummaryWriter("/home/derek/deep-forecasts/logs")
@@ -96,17 +53,11 @@ logger.info(dataset.head())
 logger.debug(len(dataset))
 
 dataset = dataset.apply(pd.to_numeric)
-dataset = prepare_data(dataset)
+min_max_data_values, dataset = gjnn.dataset_preprocessing.prepare_data(dataset)
 
-## Here we need to normalize the dataset.
-
-# The current split is 85% of data is used for training and 15% for validation of the model
-train = dataset.sample(frac=0.85, random_state=200)
-#test = dataset.drop(train.index)
 
 # Here a custom Data Loader is used
-train = gjnn.dataloader.Dataset(train)
-#test = gjnn.dataloader.Dataset(test)
+train = gjnn.dataloader.Dataset(dataset)
 
 # Old Manual Setting of Some Neural Network Training Related Hyperparameters
 # batch_size = 64
@@ -164,6 +115,8 @@ for epoch in range(num_epochs):
 
     ## Training loop
     for i, (user_1, user_2, user_1_dist, user_2_dist) in enumerate(train_loader):
+        break
+    break
 
         user_1 = user_1.to(device)
         user_2 = user_2.to(device)
@@ -199,27 +152,6 @@ for epoch in range(num_epochs):
 
         optimizer.step()
 
-    ## Validation loop
-    # print("Running validation...")
-    # total_acc = []
-    # total_loss = []
-    # for i, (user_1, user_2, user_1_dist, user_2_dist) in enumerate(test_loader):
-    #     user_1 = user_1.to(device)
-    #     user_2 = user_2.to(device)
-    #     user_1_dist = user_1_dist.to(device)
-    #     user_2_dist = user_2_dist.to(device)
-    #
-    #     optimizer.zero_grad()
-    #
-    #     outputs = model(user_1, user_2)
-    #     comparison = (outputs.squeeze() > 0)
-    #     targets = (user_2_dist - user_1_dist > 0).type_as(outputs)
-    #     total_loss.append(criterion(outputs.squeeze(), targets))
-    #     total_acc.append(torch.mean((comparison == targets.type_as(comparison)).type_as(torch.FloatTensor())).data)
-    #
-    # writer.add_scalar('Val/loss', sum(total_loss) / len(total_loss), epoch + 1)
-    # writer.add_scalar('Val/acc', sum(total_acc) / len(total_acc), epoch + 1)
-    # print("Loss on validation batch for epoch {} is: {:.4f}. Acc: {:.4f}\n".format(epoch + 1, loss, acc))
     print("Epoch done! Saving model.")
     torch.save(model.state_dict(), "/home/derek/deep-forecasts/model_after_epoch_{}.pt".format(epoch+1))
 
