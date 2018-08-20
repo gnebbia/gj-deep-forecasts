@@ -1,34 +1,23 @@
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import torch
-import torch.nn as nn
-import gjnn.model
 import gjnn.dataloader
 from sklearn import preprocessing
-import argparse
-import logging.config
 import timeit
-from tensorboardX import SummaryWriter
+
 
 ## This function also returns the min and max of the original data for all columns
 ## that are normalized. This will give us a normalization scale when
 ## Each observed value #  problem: We need to normalize the tournament ifp's
 ## using the normalization scale
 ## from the training data.
+
 def prepare_data(dataset):
     # To modify when dataset column order will change
-    features_user_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15]
-    features_user_2 = [0, 1, 2, 3, 4, 5, 16, 17, 18, 19, 20, 21, 22]
-    topics = [0, 1, 2, 3, 4, 5]
 
     dataset = pd.read_csv("ds_sample_5M.csv", sep=None, engine='python',
                           dtype={'user_id_1': "category", "user_id_2": "category"})
     dataset.drop(["ifp_id"], axis=1, inplace=True)
     dataset = dataset.apply(pd.to_numeric)
-
-    ## Normalize columns
-    min_max_scaler = preprocessing.MinMaxScaler()
 
     ## categorical columns
     dataset["user_id_1"] = dataset["user_id_1"].fillna(0.0).astype(int)
@@ -83,6 +72,44 @@ def prepare_data(dataset):
             "value_a": [min_value_a, max_value_a], "value_b": [min_value_b, max_value_b],
             "value_c": [min_value_c, max_value_c],
             "days_from_start": [min_days_from_start, max_days_from_start]}, dataset
+
+def prepare_out_of_sample_data(minmax, dataset):
+
+    dataset.drop(["ifp_id"], axis=1, inplace=True)
+    dataset = dataset.apply(pd.to_numeric)
+
+    for i in dataset.columns:
+        if i.startswith("distance") or i.startswith("topic"):
+            # Don't normalize the distance or topic columns!
+            continue
+        if i == "user_id_1":
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["id"][0]) / (minmax["id"][1] - minmax["id"][0]))
+
+
+        elif i == "user_id_2":
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["id"][0]) / (minmax["id"][1] - minmax["id"][0]))
+        elif i == "expertise_1":
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["expertise"][0]) / (minmax["expertise"][1] - minmax["expertise"][0]))
+        elif i == "expertise_2":
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["expertise"][0]) / (minmax["expertise"][1] - minmax["expertise"][0]))
+        elif i.startswith("value_a"):
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["value_a"][0]) / (minmax["value_a"][1] - minmax["value_a"][0]))
+        elif i.startswith("value_b"):
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["value_b"][0]) / (minmax["value_b"][1] - minmax["value_b"][0]))
+        elif i.startswith("value_c"):
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["value_c"][0]) / (minmax["value_c"][1] - minmax["value_c"][0]))
+        elif i.startswith("days_from_start"):
+            dataset[i] = dataset[i].transform(
+                lambda x: (float(x) - minmax["days_from_start"][0]) / (minmax["days_from_start"][1] - minmax["days_from_start"][0]))
+
+    return dataset
 
 def get_sample_question_data_loaders():
     data_loaders = []

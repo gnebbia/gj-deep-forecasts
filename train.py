@@ -38,7 +38,7 @@ print(args)
 # shuf -n 1000000 ds_with_combinations_yr1.csv > ds_sample_1M.csv
 # cat ds_sample_1M.csv >> header.csv
 # mv header.csv ds_sample_1M.csv
-# sed -i 's/\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,//g' ds_sample_1M.csv
+# sed -i 's/\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,\,//g' das_sample_1M.csv
 
 # Dataset Loading
 logger.debug("Reading Dataset...")
@@ -54,22 +54,16 @@ logger.debug(len(dataset))
 
 dataset = dataset.apply(pd.to_numeric)
 min_max_data_values, dataset = gjnn.dataset_preprocessing.prepare_data(dataset)
-
+np.save("gjnn/min_max_dataset_"+args.input+".npy", min_max_data_values)
 
 # Here a custom Data Loader is used
 train = gjnn.dataloader.Dataset(dataset)
 
-# Old Manual Setting of Some Neural Network Training Related Hyperparameters
-# batch_size = 64
-# n_iters = 1000
-# num_epochs = n_iters / (len(train) / batch_size)
-# num_epochs = int(num_epochs)
 
 batch_size = args.batch_size
 num_epochs = args.epochs
 
 train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
-#test_loader = torch.utils.data.DataLoader(test, batch_size=2 * batch_size, shuffle=False)
 
 ## How do you know?
 logger.debug("Dataset has been properly loaded...")
@@ -103,8 +97,6 @@ logger.debug("Model correctly initialized...")
 criterion = nn.modules.loss.BCEWithLogitsLoss()
 logger.debug("Distance Loss Correctly Initialized...")
 
-# At the moment we stick to a classic SGD algorithm, maybe we can change it to Adam
-# optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=True)
 logger.debug("Optimizer Instantiated...")
 
@@ -115,9 +107,6 @@ for epoch in range(num_epochs):
 
     ## Training loop
     for i, (user_1, user_2, user_1_dist, user_2_dist) in enumerate(train_loader):
-        break
-    break
-
         user_1 = user_1.to(device)
         user_2 = user_2.to(device)
         user_1_dist = user_1_dist.to(device)
@@ -163,9 +152,7 @@ for epoch in range(num_epochs):
         filename = "ds_" + str(j) + "-0.csv"
         dataset = pd.read_csv(filename, sep=None, engine='python',
                               dtype={'user_id_1': "category", "user_id_2": "category"})
-        dataset.drop(["ifp_id"], axis=1, inplace=True)
-        dataset = dataset.apply(pd.to_numeric)
-        dataset = prepare_data(dataset)
+        dataset = gjnn.dataset_preprocessing.prepare_out_of_sample_data(min_max_data_values, dataset)
         test = gjnn.dataloader.Dataset(dataset)
         loader = torch.utils.data.DataLoader(test, batch_size= batch_size, shuffle=False)
 
@@ -184,7 +171,7 @@ for epoch in range(num_epochs):
             total_loss.append(criterion(outputs.squeeze(), targets))
             total_acc.append(
                 torch.mean((comparison == targets.type_as(comparison)).type_as(torch.FloatTensor())).data)
-            if o % 20 == 0:
+            if o % 50 == 0:
                 print("Still working... {}/{}".format(o, len(loader)))
 
         loss = sum(total_loss) / len(total_loss)

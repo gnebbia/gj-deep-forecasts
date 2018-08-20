@@ -1,170 +1,150 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import gjnn.model
 import gjnn.dataloader
-import argparse
-import logging.config
+import gjnn.dataset_preprocessing
 import timeit
-from sklearn import preprocessing
-from tensorboardX import SummaryWriter
+import operator
+import os.path
+import csv
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-## The problem: We need to normalize the tournament ifp's
-## using the normalization scale
-## from the training data.
-def prepare_data_for_evaluation(dataset):
+## Get a ranking from the win/losses in the tournament mtx.
+## We implement INCR-INDEG as a 5-approximation for the best ranking
+## ref: "Ordering by weighted number of wins gives a good ranking for weighted tournaments"
+## authors: coppersmith, fleischer, rurda
+def make_ranking(tournament_matrix):
+    x = tournament_matrix
+    for i in xrange(0,tournament_matrix.shape[0]):
+        tournament_matrix[i, i] = 0  # Just in case there is bogus data
 
-    # To modify when dataset column order will change
-    features_user_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15]
-    features_user_2 = [0, 1, 2, 3, 4, 5, 16, 17, 18, 19, 20, 21, 22]
-    topics = [0, 1, 2, 3, 4, 5]
+    y = np.zeros(tournament_matrix.shape)
+    for i in xrange(0, tournament_matrix.shape[0]):
+        for j in xrange(0, tournament_matrix.shape[0]):
+            y[i, j] = tournament_matrix[i, j] / \
+                    (tournament_matrix[i, j]+tournament_matrix[j, i]) if tournament_matrix[i, j] > 0 \
+                    else 0.0
 
-    dataset = pd.read_csv("ds_sample_5M.csv", sep=None, engine='python',
-                                dtype={'user_id_1': "category", "user_id_2": "category"})
-    dataset.drop(["ifp_id"], axis=1, inplace=True)
-    dataset = dataset.apply(pd.to_numeric)
+    scores = {}
+    for i in xrange(0, tournament_matrix.shape[0]):
+        scores[i] = np.sum(y[i, ])
+    return sorted(scores.items(), key=operator.itemgetter(1), reverse=True)
 
-    ## Normalize columns
-    min_max_scaler = preprocessing.MinMaxScaler()
-    topic_0_norm_map = {}
-    topic_1_norm_map = {}
-    topic_2_norm_map = {}
-    topic_3_norm_map = {}
-    topic_4_norm_map = {}
-    topic_5_norm_map = {}
-    expertise_1_norm_map = {}
-    user_id_1_norm_map = {}
-    value_a_1_norm_map = {}
-    value_b_1_norm_map = {}
-    value_c_1_norm_map = {}
-    days_from_start_1_norm_map = {}
-    a_norm_map = {}
-    b_norm_map = {}
-    c_norm_map = {}
-    expertise_2_norm_map = {}
-    user_id_2_norm_map = {}
-    value_a_1_norm_map = {}
-    value_b_1_norm_map = {}
-    value_c_1_norm_map = {}
-    days_from_start_2_norm_map = {}
-
-    user_id_2_norm_map = {}
-
-
-
-    ## categorical columns
-    dataset["user_id_1"] = dataset["user_id_1"].fillna(0.0).astype(int)
-    dataset["user_id_2"] = dataset["user_id_2"].fillna(0.0).astype(int)
-    dataset["expertise_1"] = dataset["expertise_1"].fillna(0.0).astype(int)
-    dataset["expertise_2"] = dataset["expertise_2"].fillna(0.0).astype(int)
-    min_id = min(min(dataset["user_id_1"]), min(dataset["user_id_2"]))
-    max_id = max(max(dataset["user_id_1"]), max(dataset["user_id_2"]))
-    min_expertise = min(min(dataset["expertise_1"]), min(dataset["expertise_2"]))
-    max_expertise = max(max(dataset["expertise_2"]), max(dataset["expertise_2"]))
-
-    for i in dataset.columns:
-        if i.startswith("distance"):
-            # Don't normalize the distance columns!
-            continue
-        if i == "user_id_1":
-            dataset["user_id_1"] = dataset["user_id_1"].transform(lambda x: (float(x) - min_id) / (max_id - min_id))
-        elif i == "user_id_2":
-            dataset["user_id_2"] = dataset["user_id_2"].transform(lambda x: (float(x) - min_id) / (max_id - min_id))
-        elif i == "expertise_1":
-            dataset["expertise_1"] = dataset["expertise_1"].transform(
-                lambda x: (float(x) - min_expertise) / (max_expertise - min_expertise))
-        elif i == "expertise_2":
-            dataset["expertise_2"] = dataset["expertise_2"].transform(
-                lambda x: (float(x) - min_expertise) / (max_expertise - min_expertise))
-        else:
-            x = dataset[i]  # returns a numpy array
-            x_scaled = min_max_scaler.fit_transform(x)
-            dataset[i] = x_scaled
-
-    user_1 = dataset.iloc[:, features_user_1]
-    user_2 = dataset.iloc[:, features_user_2]
-
-    return dataset
 
 def get_sample_question_data_loaders():
     data_loaders = []
-    for j in range(1050, 1052): #1105):
+    minmax_values = np.load("gjnn/min_max_dataset_ds_sample_5M.csv.npy").item()
+    for j in range(1050, 1105):
+        print("Building DataLoader for IFIP_{}...".format(j))
         if j == 1079:
             continue
         filename = "ds_" + str(j) + "-0.csv"
         d = pd.read_csv(filename, sep=None, engine='python',
                               dtype={'user_id_1': "category", "user_id_2": "category"})
-        d.drop(["ifp_id"], axis=1, inplace=True)
-        d = d.apply(pd.to_numeric)
-        d = prepare_data(d)
+        d = gjnn.dataset_preprocessing.prepare_out_of_sample_data(minmax_values,d)
         test = gjnn.dataloader.Dataset(d)
         data_loaders.append(torch.utils.data.DataLoader(test, batch_size=1, shuffle=False))
     return data_loaders
 
-
-writer = SummaryWriter("/home/derek/deep-forecasts/logs/evaluation")
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--input", help="input dataset", default="ds_short.csv", type=str)
-parser.add_argument("--epochs", help="number of epochs in the training phase", default=50, type=int)
-parser.add_argument("--siamese_size", help="number of neurons for siamese network", default=20, type=int)
-parser.add_argument("--hidden_size", help="number of neurons for hidden fully connected layers", default=25, type=int)
-parser.add_argument("--batch_size", help="size of the batch to use in the training phase", default=64, type=int)
-# args = parser.parse_args()
-args = parser.parse_args(
-    ["--siamese_size=32", "--hidden_size=64", "--epochs=50", "--batch_size=512", "--input=ds_sample_5M.csv"])
-
-print(args)
-
 # Dataset Loading
-print("Reading Trial Questions...")
+print("Building data loaders for all out of training IFIPs...")
 x = timeit.time.time()
 data_loaders = get_sample_question_data_loaders()
 print("Done! It took {:.3f} seconds".format(timeit.time.time() - x))
 
-num_epochs = args.epochs
-
 # Load model from disk
+hidden_layer_size = 64
+siamese_layer_size = 32
+output_layer_size = 1
+num_features_per_branch = 13
 model = gjnn.model.SiameseNetwork(num_features_per_branch, siamese_layer_size, hidden_layer_size, output_layer_size)
+model.load_state_dict(torch.load("use_model_epoch_1.pt"))
 model = model.to(device)
 criterion = nn.modules.loss.BCEWithLogitsLoss()
 
 model.eval()
-print("Running Against out-of-sample IFIPs...")
-for loader in data_loaders:
+
+minmax = np.load("gjnn/min_max_dataset_ds_sample_5M.csv.npy").item()
+print("Running Tournaments for out-of-sample IFIPs...")
+IFIP_id_list = range(1050, 1105)
+for i, loader in enumerate(data_loaders):
+    if IFIP_id_list[i] == 1079:
+        continue ## This IFIP is missing.
     k = 0
     competitors = {}
+    print("Finding competitors on IFIP_{}...".format(IFIP_id_list[i]))
     for o, (oot_user_1, oot_user_2, _, _) in enumerate(loader):
-        break
+        user_id1 = str("%.8f" % oot_user_1[0][7].item())
+        user_id2 = str("%.8f" % oot_user_2[0][7].item())
+        if user_id1 not in competitors.keys():
+            competitors[user_id1] = k
+            k += 1
+        if user_id2 not in competitors.keys():
+            competitors[user_id2] = k
+            k += 1
+        # Safe assumption: all forecasters will be seen in the first 100k entries of the data file.
+        # This is because entries in file are ordered by id1, id2. So we will see id1 vs all other
+        # forecasters in the first entries of the data file.
+        if o == 100000:
+            break
 
-    total_acc = []
-    total_loss = []
-    for o, (oot_user_1, oot_user_2, oot_user_1_dist, oot_user_2_dist) in enumerate(loader):
-        oot_user_1 = oot_user_1.to(device)
-        oot_user_2 = oot_user_2.to(device)
-        oot_user_1_dist = oot_user_1_dist.to(device)
-        oot_user_2_dist = oot_user_2_dist.to(device)
+    print(k)
+    tournament_matrix = np.zeros([len(competitors.keys()), len(competitors.keys())])
+    if not os.path.isfile("last_tmatrix_{}.npy".format(IFIP_id_list[i])):
+        for o, (oot_user_1, oot_user_2, oot_user_1_dist, oot_user_2_dist) in enumerate(loader):
+            player_1 = competitors[str("%.8f" % oot_user_1[0][7].item())]
+            player_2 = competitors[str("%.8f" % oot_user_2[0][7].item())]
 
-        outputs = model(oot_user_1, oot_user_2)
-        comparison = (outputs.squeeze() > 0)
-        targets = (oot_user_2_dist - oot_user_1_dist > 0).type_as(outputs)
-        total_loss.append(criterion(outputs.squeeze(), targets))
-        total_acc.append(
-            torch.mean((comparison == targets.type_as(comparison)).type_as(torch.FloatTensor())).data)
-        if o % 20 == 0:
-            print("Still working... {}/{}".format(o, len(loader)))
+            oot_user_1 = oot_user_1.to(device)
+            oot_user_2 = oot_user_2.to(device)
+            oot_user_1_dist = oot_user_1_dist.to(device)
+            oot_user_2_dist = oot_user_2_dist.to(device)
 
-    loss = sum(total_loss) / len(total_loss)
-    acc = sum(total_acc) / len(total_acc)
-    writer.add_scalar('IFIP_' + str(j) + '/loss', loss, epoch + 1)
-    writer.add_scalar('IFIP_' + str(j) + '/acc', acc, epoch + 1)
-    print("Loss on out of sample IFIP_{} for epoch {} is: {:.4f}. Acc: {:.4f}\n".format(j, epoch + 1, loss, acc))
+            ## output == 1: player_1 is closer than player_2
+            ## output == 0: player_2 is closer than player_1
+            output = (model(oot_user_1, oot_user_2).squeeze() > 0)
+            truth = (oot_user_2_dist - oot_user_1_dist > 0).type_as(output)
 
+            if output == 1:
+                tournament_matrix[player_1, player_2] += 1
+            else:
+                tournament_matrix[player_2, player_1] += 1
+
+            if o % 10000 == 0:
+                print("Still working... {}/{}".format(o, len(loader)))
+
+        np.save("last_tmatrix_{}.npy".format(IFIP_id_list[i]), tournament_matrix)
+    else:
+        tournament_matrix = np.load("last_tmatrix_{}.npy".format(IFIP_id_list[i]))
+
+    ranking = make_ranking(tournament_matrix)
+    # The competitor map is invertible.
+    inverse_competitors = {v: k for k, v in competitors.iteritems()}
+    ranking_ids = range(0,len(ranking))
+    for k in xrange(0,len(ranking)):
+        this_rank = ranking[k]
+
+        # Undo the normalized user_id.
+        user_id_norm = float(inverse_competitors[this_rank[0]])
+        user_id = user_id_norm * (minmax["id"][1] - minmax["id"][0]) + minmax["id"][0]
+
+        # Round the undone-normalized user_id.
+        a = np.ceil(user_id)
+        b = np.floor(user_id)
+        int_user_id = int(np.ceil(user_id)) if np.abs(user_id-a) < np.abs(user_id-b) else int(np.floor(user_id))
+        ranking_ids[k] = (user_id,
+                          int_user_id,siamese_layer_size
+                          this_rank[1])
+
+    with open('ranking_IFIP_{}.csv'.format(IFIP_id_list[i]), 'wb') as out:
+        csv_out = csv.writer(out)
+        csv_out.writerow(['un_norm_id', 'est_id', 'rank_score'])
+        for row in ranking_ids:
+            csv_out.writerow(row)
 
 
