@@ -118,23 +118,3 @@ def generate_column_names_per_user(number_options=3):
         column_names.append("fcast_date_{}".format(chr(n_opt+ord('a'))))
     return column_names
 
-import subprocess
-for i in range(50, 100):
-     cmd = "grep '^10"+str(i)+"-0' ds_with_combinations_yr1.csv > ds_10"+str(i)+"-0.csv"
-     subprocess.Popen(cmd, shell=True).communicate()
-     cmd = "cat ds_10" + str(i) + "-0.csv >> header.csv"
-     subprocess.Popen(cmd, shell=True).communicate()
-     cmd = "mv header.csv ds_10" + str(i) + "-0.csv"
-     subprocess.Popen(cmd, shell=True).communicate()
-     cmd = "cp header2.csv header.csv"
-     subprocess.Popen(cmd, shell=True).communicate()
-
-for i in range(100, 105):
-     cmd = "grep '^1"+str(i)+"-0' ds_with_combinations_yr1.csv > ds_1"+str(i)+"-0.csv"
-     subprocess.Popen(cmd, shell=True).communicate()
-     cmd = "cat ds_1" + str(i) + "-0.csv >> header.csv"
-     subprocess.Popen(cmd, shell=True).communicate()
-     cmd = "mv header.csv ds_1" + str(i) + "-0.csv"
-     subprocess.Popen(cmd, shell=True).communicate()
-     cmd = "cp header2.csv header.csv"
-     subprocess.Popen(cmd, shell=True).communicate()

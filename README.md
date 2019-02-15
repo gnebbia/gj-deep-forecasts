@@ -34,16 +34,24 @@ To generate the question file with topic relevance type:
 $ python gjnn/lda.py
 ```
 
-To preprocess the dataset of forecast with the question generated file type:
-```bash
-$ python generate_dataset.py --inputsurv=data/survey_fcasts.yr1.tab --inputquest=data/questions_w_topics.csv --outputf=~/ds.csv
-```
+Then preprocess the dataset of forecasts into a format amenbile for the siamese network. There are three steps:
+1) Convert raw survey file; 2) split raw survey file by ifip; 3) for each ifip, generate all pairs of judgements.
 
-We still need a preprocessing step used to generate combinations of couples of predictions from the dataset we 
-produced in the last step, this step will output us a dataset which can be fed to the neural network:
+generate_dataset.py takes the following arguments:
+--inputsurv: the input dataset, representing the good judgement yearly survey csv file.
+--inputquest: the input dataset, representing the good judgement yearly survey csv file.
+--outputf: the output: a processed file that can be used to feed a general neural network.
+--ifipdir: the directory where ifip pairs are stored.
+--dontformat: If present, do not the yearly survey file.
+--dontsplit: If present, do not split output by ifip.
+--dontpair: If present, do not generate pairs for each ifip.
+
+For example:
 ```bash
-$ python generate_pairs_for_siamese_net.py --input=~/ds.csv --output=~/ds_with_combinations.csv
+$ python3 generate_dataset.py --inputsurv=data/survey_fcasts.yr1.tab --inputquest=data/questions_w_topics.csv --outputf=~/ds.csv --dontsplit --dontpair
 ```
+Will take the raw survey data, convert it to the format our scripts need, but will not split the data by ifip and will not generate
+pairs for each ifip file.
 
 At this point the output file can be used to be the input of the siamese neural network, each row
 in the file contains information about a combination of forecasts.
