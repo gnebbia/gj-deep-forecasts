@@ -12,6 +12,9 @@ results/
 # Cache for dataset
 .dscache
 
+# Idea cache for PyCharm
+.idea
+
 # Datasets
 data/
 
