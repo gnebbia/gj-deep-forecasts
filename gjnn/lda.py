@@ -9,8 +9,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-
 # create sample documents
 
 def get_questions_text(questions_df):
@@ -25,28 +23,23 @@ def get_questions_text(questions_df):
     return doc_set
 
 
-
 def preprocess_text(doc_set):
 # This function removes the stopwords and useless words/strings
 # doc_set: this is an array containing the question data, each element is a question
 # the return value is the array of question data but cleaned from all the stopwords and words we do not want
-	list_of_removal_words = ['\'s','e.g.','(', ')','-','_',',',';',':','i.e.','*','.','\''] 
-	list_of_removal_regex = [r"http\S+", r"Http\S+", r"HTTP\S+", r"www\S+", r"WWW\S+"]
-	stopwords = ['will','\'s','e.g.,','i.e.,']
-	    
-	for i in range(len(doc_set)):
-	     question = doc_set[i]
-	     for string in list_of_removal_words:
-	         question = question.replace(string, " ")
-
-	     for regex in list_of_removal_regex:
-	        question = re.sub(regex, "", question) 
-
-	     querywords = question.split()
-	     resultwords  = [word for word in querywords if word.lower() not in stopwords]
-	     doc_set[i] = ' '.join(resultwords)
-	return doc_set
-
+    list_of_removal_words = ['\'s','e.g.','(', ')','-','_',',',';',':','i.e.','*','.','\'']
+    list_of_removal_regex = [r"http\S+", r"Http\S+", r"HTTP\S+", r"www\S+", r"WWW\S+"]
+    stopwords = ['will','\'s','e.g.,','i.e.,']
+    for i in range(len(doc_set)):
+        question = doc_set[i]
+        for string in list_of_removal_words:
+            question = question.replace(string, " ")
+        for regex in list_of_removal_regex:
+            question = re.sub(regex, "", question)
+        querywords = question.split()
+        resultwords  = [word for word in querywords if word.lower() not in stopwords]
+        doc_set[i] = ' '.join(resultwords)
+    return doc_set
 
 
 def get_corpus(doc_set):
@@ -69,25 +62,25 @@ def get_corpus(doc_set):
         raw = i.lower()
         tokens = tokenizer.tokenize(raw)
     
-    	# remove stop words from tokens
+        # remove stop words from tokens
         stopped_tokens = [i for i in tokens if not i in en_stop]
     	    
-    	# stem tokens
+        # stem tokens
         stemmed_tokens = [p_stemmer.stem(i) for i in stopped_tokens]
     	    
         # add tokens to list
         texts.append(stemmed_tokens)
     
-        # turn our tokenized documents into a id <-> term dictionary
+    # turn our tokenized documents into a id <-> term dictionary
     dictionary = corpora.Dictionary(texts)
-    	 
-    	# convert tokenized documents into a document-term matrix
+
+    # convert tokenized documents into a document-term matrix
     corpus = [dictionary.doc2bow(text) for text in texts]
     return corpus, dictionary 
     
 
 def generate_lda_model(num_topics, corpus, passes, dictionary):
-# generate LDA model
+    # generate LDA model
     num_topics = 6
     ldamodel = gensim.models.ldamodel.LdaModel(corpus, num_topics=num_topics, id2word =
             dictionary, passes=20)
@@ -96,8 +89,8 @@ def generate_lda_model(num_topics, corpus, passes, dictionary):
 
 def save_topics_to_file(filename, num_words = 20):
     with open(filename, 'a') as out:
-    	for i in ldamodel.print_topics(num_words=20):
-    		out.write(str(i) + '\n')
+        for i in ldamodel.print_topics(num_words=20):
+            out.write(str(i) + '\n')
 
 
 #if __name__ == "__main__":
@@ -127,11 +120,8 @@ for i in range(len(doc_set)):
     doc_lda.append(ldamodel[corpus[i]])
     #print("The result is {}".format(doc_lda))
 
-
-
 for index, row in questions.iterrows():
     for i in doc_lda[index]:
             questions.loc[index,'topic_' + str(i[0])] = i[1]
-
 
 questions.to_csv('data/questions_w_topics.csv', index=False)

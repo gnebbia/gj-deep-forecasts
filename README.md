@@ -29,21 +29,31 @@ $ pip install -r requirements.txt
 
 ## Usage Example
 
-To generate the question file with topic relevance type:
+Begin by running LDA over the question file from the good 
+judgement project dataset (ifps.csv):
 ```bash
-$ python gjnn/lda.py
+$ python3 gjnn/lda.py
 ```
 
 Then preprocess the dataset of forecasts into a format amenbile for the siamese network. There are three steps:
-1) Convert raw survey file; 2) split raw survey file by ifip; 3) for each ifip, generate all pairs of judgements.
+1) Convert raw survey file; 
+2) split raw survey file by ifip; 
+3) for each ifip, generate all pairs of judgements.
 
 generate_dataset.py takes the following arguments:
+
 --inputsurv: the input dataset, representing the good judgement yearly survey csv file.
+
 --inputquest: the input dataset, representing the good judgement yearly survey csv file.
+
 --outputf: the output: a processed file that can be used to feed a general neural network.
+
 --ifipdir: the directory where ifip pairs are stored.
+
 --dontformat: If present, do not the yearly survey file.
+
 --dontsplit: If present, do not split output by ifip.
+
 --dontpair: If present, do not generate pairs for each ifip.
 
 For example:
@@ -58,14 +68,14 @@ in the file contains information about a combination of forecasts.
 
 At this point In order to start the training of the neural network we can type:
 ```bash
-$ python train.py --siamese_size=25  --hidden_size=20 --epochs=2 --batch_size=64 --input=data/ds_wit_combinations.csv
+$ python3 train.py --siamese_size=25  --hidden_size=20 --epochs=2 --batch_size=64 --input=data/ds_wit_combinations.csv
 ```
 
 The script train.py is parameterized, as can be seen in the above example, anyway it can also be started with default 
 hyperparameters with:
 
 ```bash
-$ python train.py --input=data/ds_wit_combinations.csv
+$ python3 train.py --input=data/ds_wit_combinations.csv
 ```
 It is adviceable to first run the script on a small dataset to inspect the output, and modify it accordingly to
 preference.
